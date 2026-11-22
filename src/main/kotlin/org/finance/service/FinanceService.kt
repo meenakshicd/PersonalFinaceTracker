@@ -8,6 +8,7 @@ import org.finance.model.AccountResponse
 import org.finance.model.MonthlyExpenseResponse
 import org.finance.model.MonthlySavingsResponse
 import org.finance.model.PageResponse
+import org.finance.model.SpendingSummaryResponse
 import org.finance.model.StatementImportResponse
 import org.finance.model.SummaryResponse
 import org.finance.model.TransactionResponse
@@ -207,6 +208,41 @@ class FinanceService(
             throw TransactionNotFoundException(id)
         }
         return transaction.toResponse()
+    }
+
+    @Transactional
+    fun categorizeTransaction(id: Long, category: String, authSubject: String): TransactionResponse {
+        val client = requireClient(authSubject)
+        val transaction = transactionRepository.findById(id)
+            .orElseThrow { TransactionNotFoundException(id) }
+        if (transaction.account.client?.id != client.id) {
+            throw TransactionNotFoundException(id)
+        }
+        val normalizedCategory = category.trim().uppercase()
+        if (normalizedCategory.isEmpty() || normalizedCategory.length > 32) {
+            throw InvalidTransactionFilterException("category must contain between 1 and 32 characters")
+        }
+        transaction.category = normalizedCategory
+        return transactionRepository.save(transaction).toResponse()
+    }
+
+    @Transactional(readOnly = true)
+    fun getSpendingSummary(
+        clientId: Long,
+        month: YearMonth,
+        authSubject: String,
+    ): SpendingSummaryResponse {
+        requireClient(clientId, authSubject)
+        val byCategory = transactionRepository.getSpendingByCategory(
+            clientId,
+            TransactionType.EXPENSE,
+            month.atDay(1),
+            month.atEndOfMonth(),
+        )
+        val totalSpend = byCategory.fold(BigDecimal.ZERO) { total, category ->
+            total + category.totalSpend
+        }
+        return SpendingSummaryResponse(month.toString(), totalSpend, byCategory)
     }
 
     @Transactional(readOnly = true)

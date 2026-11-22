@@ -41,13 +41,15 @@ class BankStatementCsvParser(private val categoryClassifier: TransactionCategory
             .toList()
         val headers = rows.firstOrNull()?.trim()?.split(",")?.map(String::trim)
             ?: throw InvalidBankStatementException("The statement file is empty")
-        val validHeaders = setOf(
-            listOf("date", "description", "amount"),
-            listOf("date", "description", "amount", "type"),
-        )
-        if (headers !in validHeaders) {
+        val optionalHeaders = headers.drop(3)
+        if (
+            headers.size !in 3..5 ||
+            headers.take(3) != listOf("date", "description", "amount") ||
+            optionalHeaders.any { it !in setOf("type", "category") } ||
+            optionalHeaders.distinct().size != optionalHeaders.size
+        ) {
             throw InvalidBankStatementException(
-                "The statement must use date,description,amount with an optional type column",
+                "The statement must use date,description,amount with optional type and category columns",
             )
         }
 
@@ -93,13 +95,18 @@ class BankStatementCsvParser(private val categoryClassifier: TransactionCategory
                     )
                 }
             } ?: if (amount > BigDecimal.ZERO) TransactionType.INCOME else TransactionType.EXPENSE
+            val categoryIndex = headers.indexOf("category")
+            val explicitCategory = columns.getOrNull(categoryIndex)?.trim()?.takeIf(String::isNotEmpty)
+            if (explicitCategory != null && explicitCategory.length > 32) {
+                throw InvalidBankStatementException("Row $rowNumber category must not exceed 32 characters")
+            }
 
             StatementTransaction(
                 date,
                 descriptionValue,
                 amount,
                 type,
-                categoryClassifier.classify(descriptionValue),
+                explicitCategory?.uppercase() ?: categoryClassifier.classify(descriptionValue),
             )
         }
     }

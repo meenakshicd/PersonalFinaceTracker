@@ -1,6 +1,7 @@
 package org.finance.service
 
 import org.finance.model.TransactionType
+import org.finance.model.CategorySpending
 import org.finance.persistence.entity.AccountEntity
 import org.finance.persistence.entity.ClientEntity
 import org.finance.persistence.entity.TransactionEntity
@@ -19,6 +20,74 @@ import java.time.YearMonth
 import java.util.Optional
 
 class FinanceServiceTest {
+    @Test
+    fun `categorizes a transaction belonging to the authenticated client`() {
+        val clientRepository = mock(ClientRepository::class.java)
+        val transactionRepository = mock(TransactionRepository::class.java)
+        val client = ClientEntity(
+            id = 7,
+            name = "Alex",
+            phoneNumber = "123",
+            email = "alex@example.com",
+            authSubject = "subject-1",
+        )
+        val account = AccountEntity("acct-1", "Checking", BigDecimal.ZERO, "USD", client)
+        val transaction = expense(account, "2026-11-01", "OTHER", "-35.00")
+        transaction.id = 42
+        `when`(clientRepository.findByAuthSubject("subject-1")).thenReturn(client)
+        `when`(transactionRepository.findById(42)).thenReturn(Optional.of(transaction))
+        `when`(transactionRepository.save(transaction)).thenReturn(transaction)
+
+        val result = FinanceService(
+            mock(AccountRepository::class.java),
+            transactionRepository,
+            clientRepository,
+        ).categorizeTransaction(42, "  groceries ", "subject-1")
+
+        assertEquals("GROCERIES", result.category)
+        verify(transactionRepository).save(transaction)
+    }
+
+    @Test
+    fun `summarizes monthly spending by category for the requested client`() {
+        val clientRepository = mock(ClientRepository::class.java)
+        val transactionRepository = mock(TransactionRepository::class.java)
+        val client = ClientEntity(
+            id = 7,
+            name = "Alex",
+            phoneNumber = "123",
+            email = "alex@example.com",
+            authSubject = "subject-1",
+        )
+        val month = YearMonth.of(2026, 11)
+        `when`(clientRepository.findByIdAndAuthSubject(7, "subject-1")).thenReturn(client)
+        `when`(
+            transactionRepository.getSpendingByCategory(
+                7,
+                TransactionType.EXPENSE,
+                month.atDay(1),
+                month.atEndOfMonth(),
+            ),
+        ).thenReturn(
+            listOf(
+                CategorySpending("GROCERIES", BigDecimal("125.50"), 3),
+                CategorySpending("RENT", BigDecimal("1200.00"), 1),
+                CategorySpending("UNCATEGORIZED", BigDecimal("10.00"), 1),
+            ),
+        )
+        val service = FinanceService(
+            mock(AccountRepository::class.java),
+            transactionRepository,
+            clientRepository,
+        )
+
+        val result = service.getSpendingSummary(7, month, "subject-1")
+
+        assertEquals("2026-11", result.month)
+        assertEquals(BigDecimal("1335.50"), result.totalSpend)
+        assertEquals(listOf("GROCERIES", "RENT", "UNCATEGORIZED"), result.byCategory.map { it.category })
+    }
+
     @Test
     fun `flags monitored categories when monthly spend exceeds twice the baseline`() {
         val accountRepository = mock(AccountRepository::class.java)

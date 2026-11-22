@@ -53,9 +53,11 @@ All finance endpoints use the `/api/v1` base path:
 | `PUT` | `/api/v1/clients/{clientId}/identity` | Link a profile to an identity |
 | `GET` | `/api/v1/transactions` | Filter and page transactions |
 | `GET` | `/api/v1/transactions/{id}` | Get a transaction by ID; returns `404` if it is not found |
+| `PATCH` | `/api/v1/transactions/{id}/category` | Categorize a transaction |
 | `GET` | `/api/v1/accounts/{accountId}/unusual-activities?month=YYYY-MM` | Flag unusual Nightlife/Video Games expenses |
 | `GET` | `/api/v1/clients/{clientId}/monthly-expenses?month=YYYY-MM` | Get total expenses across a client's accounts for a month |
 | `GET` | `/api/v1/clients/{clientId}/monthly-savings?month=YYYY-MM` | Get savings (income minus expenses) across a client's accounts |
+| `GET` | `/api/v1/clients/{clientId}/spending-summary?month=YYYY-MM` | Get monthly total spending and spending grouped by category |
 | `PUT` | `/api/v1/clients/{clientId}/monthly-spending-limits` | Set a category spending limit for a month |
 | `POST` | `/api/v1/accounts/{accountId}/transactions/import` | Import transactions from a CSV bank statement |
 | `POST` | `/api/v1/accounts/{accountId}/transactions/import/pdf` | **TODO:** Import transactions from a PDF bank statement (currently returns `501 Not Implemented`) |
@@ -65,6 +67,10 @@ All finance endpoints use the `/api/v1` base path:
 Example requests:
 
 ```bash
+curl -X PATCH http://localhost:8081/api/v1/transactions/1/category \
+  -H "Content-Type: application/json" \
+  -d '{"category":"groceries"}'
+curl "http://localhost:8081/api/v1/clients/1/spending-summary?month=2026-11"
 curl http://localhost:8081/api/v1/accounts
 curl -X POST http://localhost:8081/api/v1/clients \
   -H "Content-Type: application/json" \
@@ -87,7 +93,11 @@ Unusual activity checks compare the requested month's total amount and transacti
 
 The monthly spending limit endpoint is scoped to `{clientId}`. Its request body accepts a month (`YYYY-MM`), category, and limit amount. Limits are persisted and an existing limit for the same client, month, and category is updated.
 
-The import endpoint accepts a multipart `file` containing a UTF-8, comma-separated CSV with columns `date,description,amount` and an optional `type` column (`INCOME`, `EXPENSE`, or `TRANSFER`). Categories are assigned automatically from recognized descriptions; unknown descriptions remain uncategorized. Maintain the description keyword lists in `src/main/resources/transaction-categories.properties`. Without a type column, positive amounts are imported as income and zero or negative amounts as expenses. Dates use ISO `YYYY-MM-DD`; descriptions must be single words and quoted fields are not supported. The account ID is supplied in the URL. A successful import returns `201 Created` with the imported transactions; malformed statements return `400`, and unknown accounts return `404`.
+Use `PATCH /api/v1/transactions/{id}/category` with a category name to categorize or recategorize a transaction (for example, `{"category":"groceries"}` or `{"category":"rent"}`). Category names are trimmed and stored uppercase. `GET /api/v1/clients/{clientId}/spending-summary?month=YYYY-MM` returns expense totals for the month, broken down by category; uncategorized expenses are grouped under `UNCATEGORIZED`.
+
+The import endpoint accepts a multipart `file` containing a UTF-8, comma-separated CSV with columns `date,description,amount` and optional `type` (`INCOME`, `EXPENSE`, or `TRANSFER`) and `category` columns. A non-empty category supplied in the CSV is trimmed and stored uppercase; otherwise, the category is inferred from recognized descriptions and unknown descriptions remain uncategorized. Maintain the description keyword lists in `src/main/resources/transaction-categories.properties`. Without a type column, positive amounts are imported as income and zero or negative amounts as expenses. Dates use ISO `YYYY-MM-DD`; descriptions must be single words and quoted fields are not supported. The account ID is supplied in the URL. A successful import returns `201 Created` with the imported transactions; malformed statements return `400`, and unknown accounts return `404`.
+
+For example, the sample statement includes an explicit `SELF_CARE` category for `Spa`; blank category cells use description-based categorization:
 
 ```bash
 curl -X POST -F "file=@src/test/resources/sample-bank-statement.csv" \

@@ -70,7 +70,7 @@ class BankStatementCsvParserTest {
         assertEquals("NIGHTLIFE", transactions.single { it.description == "Nightlife" }.category)
         assertEquals("GROCERIES", transactions.single { it.description == "Grocery" }.category)
         assertEquals("TRANSIT", transactions.single { it.description == "Bus" }.category)
-        assertEquals(null, transactions.single { it.description == "Spa" }.category)
+        assertEquals("SELF_CARE", transactions.single { it.description == "Spa" }.category)
     }
 
     @Test
@@ -81,6 +81,35 @@ class BankStatementCsvParserTest {
             TransactionType.TRANSFER,
             parser.parse(csv.toByteArray()).single().type,
         )
+    }
+
+    @Test
+    fun `uses explicit category from csv instead of classifying description`() {
+        val csv = "date,description,amount,type,category\n2026-01-03,Coffee,-12.50,EXPENSE,  dining out "
+
+        assertEquals(
+            "DINING OUT",
+            parser.parse(csv.toByteArray()).single().category,
+        )
+    }
+
+    @Test
+    fun `classifies description when csv category is blank`() {
+        val csv = "date,description,amount,category\n2026-01-03,Grocery,-12.50,"
+
+        assertEquals(
+            "GROCERIES",
+            parser.parse(csv.toByteArray()).single().category,
+        )
+    }
+
+    @Test
+    fun `rejects category longer than database limit`() {
+        val csv = "date,description,amount,category\n2026-01-03,Coffee,-12.50,${"a".repeat(33)}"
+
+        assertThrows(InvalidBankStatementException::class.java) {
+            parser.parse(csv.toByteArray())
+        }
     }
 
     @Test

@@ -1,13 +1,16 @@
 package org.finance.api
 
 import org.finance.model.PageResponse
+import org.finance.model.TransactionCategoryRequest
 import org.finance.model.TransactionResponse
 import org.finance.service.FinanceService
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -38,4 +41,12 @@ class TransactionController(
         @AuthenticationPrincipal jwt: Jwt,
     ): TransactionResponse =
         financeService.getTransaction(id, jwt.subject)
+
+    @PatchMapping("/{id}/category")
+    fun categorizeTransaction(
+        @PathVariable id: Long,
+        @RequestBody request: TransactionCategoryRequest,
+        @AuthenticationPrincipal jwt: Jwt,
+    ): TransactionResponse =
+        financeService.categorizeTransaction(id, request.category, jwt.subject)
 }

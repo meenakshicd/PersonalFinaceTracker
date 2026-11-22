@@ -2,6 +2,7 @@ package org.finance.api
 
 import org.finance.model.MonthlyExpenseResponse
 import org.finance.model.MonthlySavingsResponse
+import org.finance.model.SpendingSummaryResponse
 import org.finance.model.SummaryResponse
 import org.finance.service.FinanceService
 import org.springframework.format.annotation.DateTimeFormat
@@ -35,4 +36,11 @@ class FinanceSummaryController(
         @RequestParam @DateTimeFormat(pattern = "yyyy-MM") month: YearMonth,
         @AuthenticationPrincipal jwt: Jwt,
     ): MonthlySavingsResponse = financeService.getMonthlySavings(clientId, month, jwt.subject)
+
+    @GetMapping("/clients/{clientId}/spending-summary")
+    fun getSpendingSummary(
+        @PathVariable clientId: Long,
+        @RequestParam @DateTimeFormat(pattern = "yyyy-MM") month: YearMonth,
+        @AuthenticationPrincipal jwt: Jwt,
+    ): SpendingSummaryResponse = financeService.getSpendingSummary(clientId, month, jwt.subject)
 }

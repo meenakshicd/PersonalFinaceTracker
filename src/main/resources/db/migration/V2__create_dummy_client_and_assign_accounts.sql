@@ -19,14 +19,15 @@ VALUES
 
 INSERT INTO transactions (account_id, description, amount, date, transaction_type, category)
 VALUES
-    ('credit-001', 'Grocery store', -64.28, DATE '2026-11-16', 'EXPENSE', NULL),
+    ('credit-001', 'Grocery store', -64.28, DATE '2026-11-16', 'EXPENSE', 'GROCERIES'),
     ('credit-001', 'Paycheck', 1850.00, DATE '2026-11-15', 'INCOME', NULL),
-    ('credit-001', 'Internet bill', -59.99, DATE '2026-11-12', 'EXPENSE', NULL),
-    ('credit-001', 'Coffee shop', -4.50, DATE '2026-11-10', 'EXPENSE', NULL),
+    ('credit-001', 'Internet bill', -59.99, DATE '2026-11-12', 'EXPENSE', 'UTILITIES'),
+    ('credit-001', 'Coffee shop', -4.50, DATE '2026-11-10', 'EXPENSE', 'DINING'),
     ('savings-001', 'Salary', 2000.00, DATE '2026-11-10', 'INCOME', NULL),
     ('savings-001', 'Interest earned', 12.34, DATE '2026-11-01', 'INCOME', NULL),
-    ('Octopus-001', 'Bus fare', -2.50, DATE '2026-11-05', 'EXPENSE', NULL),
-    ('credit-001', 'Online shopping', -120.00, DATE '2026-11-08', 'EXPENSE', NULL),
+    ('Octopus-001', 'Bus fare', -2.50, DATE '2026-11-05', 'EXPENSE', 'TRANSIT'),
+    ('credit-001', 'Online shopping', -120.00, DATE '2026-11-08', 'EXPENSE', 'SHOPPING'),
+    ('checking-001', 'Rent', -1200.00, DATE '2026-11-01', 'EXPENSE', 'RENT'),
     ('checking-001', 'Game', -20.00, DATE '2026-08-10', 'EXPENSE', 'VIDEO_GAMES'),
     ('checking-001', 'Game', -20.00, DATE '2026-09-10', 'EXPENSE', 'VIDEO_GAMES'),
     ('checking-001', 'Game', -20.00, DATE '2026-10-10', 'EXPENSE', 'VIDEO_GAMES'),
