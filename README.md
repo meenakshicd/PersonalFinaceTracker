@@ -49,8 +49,6 @@ All finance endpoints use the `/api/v1` base path:
 | `GET` | `/api/v1/accounts` | List accounts |
 | `POST` | `/api/v1/clients` | Create a client profile |
 | `GET` | `/api/v1/clients/{clientId}` | Get a client profile and its accounts |
-| `PUT` | `/api/v1/clients/{clientId}/accounts/{accountId}` | Assign an account to a client |
-| `PUT` | `/api/v1/clients/{clientId}/identity` | Link a profile to an identity |
 | `GET` | `/api/v1/transactions` | Filter and page transactions |
 | `GET` | `/api/v1/transactions/{id}` | Get a transaction by ID; returns `404` if it is not found |
 | `PATCH` | `/api/v1/transactions/{id}/category` | Categorize a transaction |
@@ -67,15 +65,11 @@ All finance endpoints use the `/api/v1` base path:
 Example requests:
 
 ```bash
-curl -X PATCH http://localhost:8081/api/v1/transactions/1/category \
-  -H "Content-Type: application/json" \
-  -d '{"category":"groceries"}'
 curl "http://localhost:8081/api/v1/clients/1/spending-summary?month=2026-11"
 curl http://localhost:8081/api/v1/accounts
 curl -X POST http://localhost:8081/api/v1/clients \
   -H "Content-Type: application/json" \
   -d '{"name":"Alex Doe","phoneNumber":"+1-555-0100","email":"alex@example.com"}'
-curl -X PUT http://localhost:8081/api/v1/clients/1/accounts/checking-001
 curl http://localhost:8081/api/v1/clients/1
 curl "http://localhost:8081/api/v1/transactions?type=EXPENSE&startDate=2026-10-01&endDate=2026-11-30&minAmount=10&maxAmount=1000&page=0&size=20"
 curl "http://localhost:8081/api/v1/accounts/checking-001/unusual-activities?month=2026-10"
